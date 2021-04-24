@@ -1,4 +1,5 @@
-#### ossTransferToS3 有4种不同语言实现
+#### ossTransferToS3 将阿里云oss存储桶的资源迁移到aws的s3,目前是单线程操作，后续增加本地消息队列，支持多线程迁移。
+#### 有4种不同语言实现
 
 ## 配置config.yaml文件
 ```bash
