@@ -146,7 +146,6 @@ func main() {
 			_startTime := time.Now().UnixNano() / 1e6
 			for {
 				i++
-				fmt.Println(obj.Size)
 				if i > 3 {
 					fmt.Println("obj key: ", obj.Key, "put 3 count failed")
 					break
