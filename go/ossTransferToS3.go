@@ -111,6 +111,23 @@ func S3UploadObject(bucketName string, session *session.Session, fileStream *byt
 	}
 	return fileName, err
 }
+func formatFileSize(fileSize int64) (size string) {
+	// 字节单位转换
+	if fileSize < 1024 {
+		//return strconv.FormatInt(fileSize, 10) + "B"
+		return fmt.Sprintf("%.2fB", float64(fileSize)/float64(1))
+	} else if fileSize < (1024 * 1024) {
+		return fmt.Sprintf("%.2fKB", float64(fileSize)/float64(1024))
+	} else if fileSize < (1024 * 1024 * 1024) {
+		return fmt.Sprintf("%.2fMB", float64(fileSize)/float64(1024*1024))
+	} else if fileSize < (1024 * 1024 * 1024 * 1024) {
+		return fmt.Sprintf("%.2fGB", float64(fileSize)/float64(1024*1024*1024))
+	} else if fileSize < (1024 * 1024 * 1024 * 1024 * 1024) {
+		return fmt.Sprintf("%.2fTB", float64(fileSize)/float64(1024*1024*1024*1024))
+	} else { //if fileSize < (1024 * 1024 * 1024 * 1024 * 1024 * 1024)
+		return fmt.Sprintf("%.2fEB", float64(fileSize)/float64(1024*1024*1024*1024*1024))
+	}
+}
 
 func main() {
 	config := ReadConfig()
@@ -129,6 +146,7 @@ func main() {
 			_startTime := time.Now().UnixNano() / 1e6
 			for {
 				i++
+				fmt.Println(obj.Size)
 				if i > 3 {
 					fmt.Println("obj key: ", obj.Key, "put 3 count failed")
 					break
@@ -145,7 +163,7 @@ func main() {
 					fmt.Println(err)
 					continue
 				}
-				fmt.Printf("upload success --> useTime: %.2fs, total time: %.2fs", float64(time.Now().UnixNano()/1e6-_secondTime)/1000, float64(time.Now().UnixNano()/1e6-_startTime)/1000)
+				fmt.Printf("upload success --> useTime: %.2fs, total time: %.2fs, size: %s", float64(time.Now().UnixNano()/1e6-_secondTime)/1000, float64(time.Now().UnixNano()/1e6-_startTime)/1000, formatFileSize(obj.Size))
 				fmt.Printf("\n")
 				count += 1
 				break
