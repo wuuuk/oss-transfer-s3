@@ -1,0 +1,12 @@
+oss:
+  endpoint: oss-ap-southeast-1.aliyuncs.com  # oss地域节点, 如果桶的位置和服务器所在区域是同一个，则可使用内网地址xxx-internal.aliyuncs.com
+  accesskeyid: xxxxxx  # 阿里云access key id
+  accesskeysecret: xxxxxx  # 阿里云access key secret
+  bucketname: xxxxxx  # bucket(桶)名称
+
+s3:
+  endpoint: ap-southeast-1  # s3区域
+  accesskeyid: xxxxxx  # aws access key id
+  accesskeysecret: xxxxxx  # aws access key secret
+  bucketname: xxxxxx  # s3(桶)名称
+  token: ""
