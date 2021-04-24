@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/aws/aws-sdk-go/aws"
@@ -125,6 +126,7 @@ func main() {
 		marker = oss.Marker(lor.NextMarker)
 		for _, obj := range lor.Objects {
 			i := 0
+			_startTime := time.Now().UnixNano() / 1e6
 			for {
 				i++
 				if i > 3 {
@@ -136,12 +138,15 @@ func main() {
 					fmt.Println(err)
 					continue
 				}
+				fmt.Printf("object: %s, download success --> useTime %.2fs,", obj.Key, float64(time.Now().UnixNano()/1e6-_startTime)/1000)
+				_secondTime := time.Now().UnixNano() / 1e6
 				_, err = S3UploadObject(config.S3.BucketName, s3Bucket, _buffer, obj.Key)
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
-				fmt.Println("copy object success, key name: ", obj.Key)
+				fmt.Printf("upload success --> useTime: %2.fs, total time: %.2fs", float64(time.Now().UnixNano()/1e6-_secondTime)/1000, float64(time.Now().UnixNano()/1e6-_startTime)/1000)
+				fmt.Printf("\n")
 				count += 1
 				break
 			}
