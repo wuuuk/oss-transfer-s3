@@ -4,7 +4,7 @@ from json import load
 import oss2
 import yaml
 import boto3
-
+import time
 
 class OssTransferToS3:
     def __init__(self) -> None:
@@ -81,8 +81,11 @@ class OssTransferToS3:
         s3Bucket = self._InitS3(config.get("s3"))
 
         bkList = oss2.ObjectIterator(ossBucket)  # 列出所有文件
+        totalCount = 0
+        __startTime = time.time()
         for i in bkList:
             fail_count = 0
+            startTime = time.time()
             while fail_count < 3:
                 buffer = self.OssGetByteObject(ossBucket, i.key)
                 if not buffer:
@@ -92,9 +95,12 @@ class OssTransferToS3:
                 if not res:
                     fail_count += 1
                     continue
-                print("copy file success, file name: {}".format(i.key))
+                print("copy file success, useTime: {}s, file name: {}".format(round(time.time() - startTime, 2), i.key))
+                totalCount += 1
                 break
-            
+            if totalCount % 1000 == 0:
+                print("current count: {}".format(totalCount))
+        print("copy done, useTime: {}s, total count: {}".format(round(time.time() - startTime, 2), totalCount))
 
 if __name__ == "__main__":
     ott = OssTransferToS3()

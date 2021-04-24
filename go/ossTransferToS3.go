@@ -3,47 +3,48 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"gopkg.in/yaml.v2"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
 )
 
 type (
 	Platform struct {
-        OSS *Config `yaml:"oss"`
-        S3 *Config `yaml:"s3"`
-    }
+		OSS *Config `yaml:"oss"`
+		S3  *Config `yaml:"s3"`
+	}
 
-    Config struct {
-        Endpoint string
-        AccessKeyID string
-        AccessKeySecret string
-        BucketName string
-        Token string
-    }
+	Config struct {
+		Endpoint        string
+		AccessKeyID     string
+		AccessKeySecret string
+		BucketName      string
+		Token           string
+	}
 )
 
 func ReadConfig() *Platform {
 	// 读取配置
 	configFile := "./config.yaml"
-    yamlFile, err := ioutil.ReadFile(configFile)
-    if err != nil {
-        fmt.Println(err.Error())
-    }
-    var _config *Platform
-    err = yaml.Unmarshal(yamlFile, &_config)
-    if err != nil {
-        fmt.Println(err.Error())
-    }
+	yamlFile, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	var _config *Platform
+	err = yaml.Unmarshal(yamlFile, &_config)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	fmt.Println("read config from", configFile)
-    return _config
+	return _config
 }
 
 func RaiseError(err error) {
@@ -68,7 +69,7 @@ func InitOss(config *Platform) *oss.Bucket {
 func InitS3(config *Platform) *session.Session {
 	// 实例化s3 bucket
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(config.S3.Endpoint),
+		Region:      aws.String(config.S3.Endpoint),
 		Credentials: credentials.NewStaticCredentials(config.S3.AccessKeyID, config.S3.AccessKeySecret, config.S3.Token),
 	})
 	if err != nil {
@@ -98,7 +99,7 @@ func S3UploadObject(bucketName string, session *session.Session, fileStream *byt
 		Bucket:               aws.String(bucketName),
 		Key:                  aws.String(fileName),
 		ACL:                  aws.String("public-read"),
-		Body: 				  bytes.NewReader(buffer),
+		Body:                 bytes.NewReader(buffer),
 		ContentType:          aws.String(http.DetectContentType(buffer)),
 		ContentDisposition:   aws.String("attachment"),
 		ServerSideEncryption: aws.String("AES256"),
@@ -115,7 +116,7 @@ func main() {
 	ossBucket := InitOss(config)
 	s3Bucket := InitS3(config)
 	marker := oss.Marker("")
-
+	count := 0
 	for {
 		lor, err := ossBucket.ListObjects(oss.MaxKeys(1000), marker)
 		if err != nil {
@@ -125,8 +126,8 @@ func main() {
 		for _, obj := range lor.Objects {
 			i := 0
 			for {
-				i ++
-				if i>3 {
+				i++
+				if i > 3 {
 					fmt.Println("obj key: ", obj.Key, "put 3 count failed")
 					break
 				}
@@ -141,6 +142,7 @@ func main() {
 					continue
 				}
 				fmt.Println("copy object success, key name: ", obj.Key)
+				count += 1
 				break
 			}
 		}
@@ -148,6 +150,6 @@ func main() {
 			break
 		}
 	}
-	fmt.Println("All files copied ")
+	fmt.Println("All files copied, total count: ", count)
 	os.Exit(1)
 }
