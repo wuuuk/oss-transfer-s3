@@ -145,7 +145,7 @@ func main() {
 					fmt.Println(err)
 					continue
 				}
-				fmt.Printf("upload success --> useTime: %2.fs, total time: %.2fs", float64(time.Now().UnixNano()/1e6-_secondTime)/1000, float64(time.Now().UnixNano()/1e6-_startTime)/1000)
+				fmt.Printf("upload success --> useTime: %.2fs, total time: %.2fs", float64(time.Now().UnixNano()/1e6-_secondTime)/1000, float64(time.Now().UnixNano()/1e6-_startTime)/1000)
 				fmt.Printf("\n")
 				count += 1
 				break
