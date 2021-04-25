@@ -52,7 +52,7 @@ class OssTransferToS3:
         # oss流式下载
         try:
             dataStream = bucket.get_object(fileName)
-            dataStream.close()
+            # dataStream.close()  # 不能关闭流，关闭之后则变成空的数据流
             return dataStream
         except BaseException as e:
             print("oss get object error, file name: {}, msg: {}".format(fileName, e))
@@ -61,9 +61,8 @@ class OssTransferToS3:
     def S3UploadObject(self, bucket_client, bucketName, fileStream, fileName):
         # s3上传
         try:
-            fileStream.read()
             resp = bucket_client.upload_fileobj(
-                fileStream, 
+                fileStream.stream, 
                 bucketName, 
                 fileName, 
                 ExtraArgs={
@@ -75,32 +74,46 @@ class OssTransferToS3:
             print("upload file error, msg: {}".format(e))
             return False
 
+    def formatFileSize(self, fileSize):
+        if fileSize < 1024:
+            return "{}B".format(fileSize)
+        elif fileSize < 1024 * 1024:
+            return "{}KB".format(round(fileSize / 1024, 2))
+        elif fileSize < 1024 * 1024 * 1024:
+            return "{}MB".format(round(fileSize / 1024 / 1024, 2))
+        elif fileSize < 1024 * 1024 * 1024 * 1024:
+            return "{}GB".format(round(fileSize / 1024 / 1024 / 1024, 2))
+        elif fileSize < 1024 * 1024 * 1024 * 1024 * 1024:
+            return "{}TB".format(round(fileSize / 1024 / 1024 / 1024/ 1024, 2))
+
     def main(self):
         config = self._ReadConfig()
         ossBucket = self._InitOss(config.get("oss"))
         s3Bucket = self._InitS3(config.get("s3"))
-
         bkList = oss2.ObjectIterator(ossBucket)  # 列出所有文件
         totalCount = 0
-        __startTime = time.time()
         for i in bkList:
             fail_count = 0
             startTime = time.time()
+            print("fileName: {}, size: {}, ".format(i.key, self.formatFileSize(i.size)), end='')
             while fail_count < 3:
                 buffer = self.OssGetByteObject(ossBucket, i.key)
                 if not buffer:
                     fail_count += 1
                     continue
+                print("download success --> useTime {}s, ".format(round(time.time() - startTime, 2)), end='')
+                _secondTime = time.time()
                 res = self.S3UploadObject(s3Bucket, config.get("s3").get("bucketname"), buffer, i.key)
                 if not res:
                     fail_count += 1
                     continue
-                print("copy file success, useTime: {}s, file name: {}".format(round(time.time() - startTime, 2), i.key))
+                print("upload success --> useTime: {}s, total time: {}s".format(round(time.time() - _secondTime, 2), round(time.time() - startTime, 2)))
                 totalCount += 1
                 break
+            break
             if totalCount % 1000 == 0:
                 print("current count: {}".format(totalCount))
-        print("copy done, useTime: {}s, total count: {}".format(round(time.time() - startTime, 2), totalCount))
+        print("All files copied, total count: ", totalCount)
 
 if __name__ == "__main__":
     ott = OssTransferToS3()
